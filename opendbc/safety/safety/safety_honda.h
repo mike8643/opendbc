@@ -31,7 +31,7 @@ static bool honda_alt_brake_msg = false;
 static bool honda_fwd_brake = false;
 static bool honda_bosch_long = false;
 static bool honda_bosch_radarless = false;
-bool honda_clarity_brake_msg = false;
+static bool honda_clarity_brake_msg = false;
 typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
 static HondaHw honda_hw = HONDA_NIDEC;
 
@@ -153,7 +153,7 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
       bool honda_stock_aeb = GET_BIT(to_push, 29U);
       int honda_stock_brake = (GET_BYTE(to_push, 0) << 2) | (GET_BYTE(to_push, 1) >> 6);
       if (honda_clarity_brake_msg) {
-        honda_stock_brake = (GET_BYTE(to_push, 6) << 2) + ((GET_BYTE(to_push, 7) >> 6) & 0x3U)
+        honda_stock_brake = (GET_BYTE(to_push, 6) << 2) + ((GET_BYTE(to_push, 7) >> 6) & 0x3U);
       }
       // Forward AEB when stock braking is higher than openpilot braking
       // only stop forwarding when AEB event is over
