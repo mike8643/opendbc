@@ -198,7 +198,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
 
     elif candidate == CAR.HONDA_CLARITY: 
-      ret.safetyConfigs[0].safetyParam |= Panda.HONDA_PARAM_CLARITY
+      ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.CLARITY.value
       ret.mass = 4052. * CV.LB_TO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.4
