@@ -206,7 +206,9 @@ class CarController(CarControllerBase):
         ts = self.frame * DT_CTRL
 
         if self.CP.carFingerprint in HONDA_BOSCH:
-          self.accel = float(np.clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX))
+          decelRate = 0.8
+          accel_cmd = float(np.clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX))
+          self.accel = accel_cmd if accel_cmd >= 0 else max(accel_cmd, self.accel - decelRate * DT_CTRL)
           self.gas = float(np.interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V))
 
           stopping = actuators.longControlState == LongCtrlState.stopping
