@@ -197,7 +197,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
 
-    elif candidate == CAR.HONDA_CLARITY:
+    elif candidate == CAR.HONDA_CLARITY: 
       ret.safetyConfigs[0].safetyParam |= Panda.HONDA_PARAM_CLARITY
       ret.mass = 4052. * CV.LB_TO_KG
       ret.wheelbase = 2.75
