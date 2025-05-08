@@ -52,6 +52,7 @@ class HondaSafetyFlags(IntFlag):
   BOSCH_LONG = 2
   NIDEC_ALT = 4
   RADARLESS = 8
+  CLARITY = 16
 
 
 class HondaFlags(IntFlag):
@@ -294,6 +295,11 @@ class CAR(Platforms):
     [HondaCarDocs("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE")],
     CarSpecs(mass=1326, wheelbase=2.70, centerToFrontRatio=0.4, steerRatio=15.38),  # 10.93 is end-to-end spec
     radar_dbc_dict('honda_civic_touring_2016_can_generated'),
+  )
+  HONDA_CLARITY = HondaNidecPlatformConfig(
+    [HondaCarDocs("Honda Clarity 2018-2021", "All", min_steer_speed=12. * CV.MPH_TO_MS)],
+    CarSpecs(mass=4052. * CV.LB_TO_KG, wheelbase=2.75, centerToFrontRatio=0.4, steerRatio=16.50),
+    radar_dbc_dict('honda_clarity_hybrid_2018_can_generated'),
   )
 
 
