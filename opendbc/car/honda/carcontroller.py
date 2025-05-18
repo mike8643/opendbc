@@ -2,8 +2,7 @@ import numpy as np
 from collections import namedtuple
 
 from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs
-from openpilot.selfdrive.car import create_gas_interceptor_command
+from opendbc.car import Bus, DT_CTRL, rate_limit, make_tester_present_msg, structs, create_gas_interceptor_command
 from opendbc.car.honda import hondacan
 from opendbc.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.car.interfaces import CarControllerBase
@@ -225,7 +224,7 @@ class CarController(CarControllerBase):
                                                          self.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
-        
+
           if self.CP.enableGasInterceptor:
             gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             if CC.longActive:
