@@ -227,7 +227,7 @@ class CarController(CarControllerBase):
 
           if self.CP.enableGasInterceptor:
             if CC.longActive:
-              self.gas = clip((gas - brake + wind_brake * 3 / 4), 0., 1.)
+              self.gas = np.clip((gas - brake + wind_brake * 3 / 4), 0., 1.)
             else:
               self.gas = 0.0
             can_sends.append(create_gas_interceptor_command(self.packer, self.gas, self.frame // 2))
