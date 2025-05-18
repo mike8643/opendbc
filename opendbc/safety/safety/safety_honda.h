@@ -284,12 +284,6 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
     }
   }
 
-  // GAS: safety check (interceptor)
-  if (addr == 0x200) {
-    if (longitudinal_interceptor_checks(to_send)) {
-      tx = false;
-    } 
-  }
 
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
