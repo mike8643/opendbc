@@ -310,7 +310,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
   static CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x194, 0, 4, .check_relay = true}, {0x1FA, 0, 8, .check_relay = false},
                                      {0x30C, 0, 8, .check_relay = true}, {0x33D, 0, 5, .check_relay = true}};
-  static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x194, 0, 4, .check_relay = true}, {0x1FA, 0, 8, .check_relay = false}, 
+  static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x194, 0, 4, .check_relay = true}, {0x1FA, 0, 8, .check_relay = false},
                                                 {0x200, 0, 6, .check_relay = true}, {0x30C, 0, 8, .check_relay = true}, {0x33D, 0, 5, .check_relay = true}};
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
@@ -343,8 +343,11 @@ static safety_config honda_nidec_init(uint16_t param) {
       {.msg = {{0x201, 0, 6, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
     };
 
-    enable_gas_interceptor ? SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret) : \
-                             SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
+    if (enable_gas_interceptor) {
+      SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret)
+    } else {
+      SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
+    }
   } else {
     // Nidec includes BRAKE_COMMAND
     static RxCheck honda_nidec_common_rx_checks[] = {
@@ -356,9 +359,12 @@ static safety_config honda_nidec_init(uint16_t param) {
       HONDA_COMMON_RX_CHECKS(0)
       {.msg = {{0x201, 0, 6, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
     };
-  
-    enable_gas_interceptor ? SET_RX_CHECKS(honda_common_interceptor_rx_checks, ret) : \
-                             SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
+
+    if (enable_gas_interceptor) {
+      SET_RX_CHECKS(honda_common_interceptor_rx_checks, ret);
+    } else {
+      SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
+    }
   }
 
   if (enable_gas_interceptor) {
