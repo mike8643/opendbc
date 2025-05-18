@@ -252,6 +252,9 @@ def create_gas_interceptor_command(packer, gas_amount, idx):
 
   return packer.make_can_msg("GAS_COMMAND", 0, values)
 
+def make_can_msg(addr, dat, bus):
+  return [addr, 0, dat, bus]
+
 
 def get_safety_config(safety_model: structs.CarParams.SafetyModel, safety_param: int = None) -> structs.CarParams.SafetyConfig:
   ret = structs.CarParams.SafetyConfig()
