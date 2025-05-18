@@ -309,6 +309,8 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
+static bool enable_gas_interceptor;
+
 static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is dynamically forwarded based on stock AEB
   // 0xE4 is steering on all cars except CRV and RDX, 0x194 for CRV and RDX,
