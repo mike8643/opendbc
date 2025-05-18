@@ -73,6 +73,9 @@ def get_can_messages(CP, gearbox_msg):
                                *HONDA_BOSCH_CANFD):
     messages.append(("DOORS_STATUS", 3))
 
+  if CP.enableGasInterceptor:
+    messages.append(("GAS_SENSOR", 50))
+
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
     messages.append(("CRUISE_FAULT_STATUS", 50))
   elif CP.carFingerprint == CAR.HONDA_CLARITY:
@@ -209,8 +212,12 @@ class CarState(CarStateBase):
       gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
-    ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
-    ret.gasPressed = ret.gas > 1e-5
+    if self.CP.enableGasInterceptor:
+      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
+      ret.gasPressed = ret.gas > 492
+    else:
+      ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
+      ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]

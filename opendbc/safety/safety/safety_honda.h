@@ -17,6 +17,9 @@
 #define HONDA_ALT_BRAKE_ADDR_CHECK(pt_bus)                                                                 \
   {.msg = {{0x1BE, (pt_bus), 3, .max_counter = 3U, .frequency = 50U}, { 0 }, { 0 }}},  /* BRAKE_MODULE */  \
 
+const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 492;
+#define HONDA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U)
+
 enum {
   HONDA_BTN_NONE = 0,
   HONDA_BTN_MAIN = 1,
@@ -63,15 +66,23 @@ static uint32_t honda_compute_checksum(const CANPacket_t *to_push) {
 }
 
 static uint8_t honda_get_counter(const CANPacket_t *to_push) {
-  int counter_byte = GET_LEN(to_push) - 1U;
-  return (GET_BYTE(to_push, counter_byte) >> 4U) & 0x3U;
+  int addr = GET_ADDR(to_push);
+  uint8_t cnt = 0U;
+  if (addr == 0x201) {
+    cnt = GET_BYTE(to_push, 4) & 0x0FU;
+  } else {
+    int counter_byte = GET_LEN(to_push) - 1U;
+    cnt = (GET_BYTE(to_push, counter_byte) >> 4U) & 0x3U;
+  }
+  return cnt;
 }
 
 static void honda_rx_hook(const CANPacket_t *to_push) {
-  const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || (honda_hw == HONDA_NIDEC);
+  const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || ((honda_hw == HONDA_NIDEC) && !enable_gas_interceptor);
   int pt_bus = honda_get_pt_bus();
 
   int addr = GET_ADDR(to_push);
+  int len = GET_LEN(to_push);
   int bus = GET_BUS(to_push);
 
   // sample speed
@@ -143,8 +154,16 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
-  if (addr == 0x17C) {
-    gas_pressed = GET_BYTE(to_push, 0) != 0U;
+  if ((addr == 0x201) && (len == 6) && enable_gas_interceptor) {
+    int gas_interceptor = HONDA_GET_INTERCEPTOR(to_push);
+    gas_pressed = gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD;
+    gas_interceptor_prev = gas_interceptor;
+  }
+
+  if (!enable_gas_interceptor) {
+    if (addr == 0x17C) {
+      gas_pressed = GET_BYTE(to_push, 0) != 0U;
+    }
   }
 
   // disable stock Honda AEB in alternative experience
@@ -264,6 +283,13 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
     }
   }
 
+  // GAS: safety check (interceptor)
+  if (addr == 0x200) {
+    if (longitudinal_interceptor_checks(to_send)) {
+      tx = false;
+    } 
+  }
+
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
@@ -289,9 +315,11 @@ static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
   static CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5, .check_relay = true}, {0x194, 0, 4, .check_relay = true}, {0x1FA, 0, 8, .check_relay = false},
                                      {0x30C, 0, 8, .check_relay = true}, {0x33D, 0, 5, .check_relay = true}};
+  static CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}};
 
   const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
   const uint16_t HONDA_PARAM_CLARITY = 16;
+  const uint16_t HONDA_PARAM_GAS_INTERCEPTOR = 32;
 
   honda_hw = HONDA_NIDEC;
   honda_brake = 0;
@@ -301,6 +329,7 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_bosch_long = false;
   honda_bosch_radarless = false;
   honda_clarity_brake_msg = GET_FLAG(param, HONDA_PARAM_CLARITY);
+  enable_gas_interceptor = GET_FLAG(param, HONDA_PARAM_GAS_INTERCEPTOR);
 
   safety_config ret;
 
@@ -313,7 +342,13 @@ static safety_config honda_nidec_init(uint16_t param) {
       {.msg = {{0x1FA, 2, 8, .max_counter = 3U, .frequency = 50U}, { 0 }, { 0 }}},  // BRAKE_COMMAND
     };
 
-    SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
+    static RxCheck honda_nidec_alt_interceptor_rx_checks[] = {
+      HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(0)
+      {.msg = {{0x201, 0, 6, .check_checksum = false, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
+    };
+
+    enable_gas_interceptor ? SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret) : \
+                             SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
   } else {
     // Nidec includes BRAKE_COMMAND
     static RxCheck honda_nidec_common_rx_checks[] = {
@@ -321,10 +356,20 @@ static safety_config honda_nidec_init(uint16_t param) {
       {.msg = {{0x1FA, 2, 8, .max_counter = 3U, .frequency = 50U}, { 0 }, { 0 }}},  // BRAKE_COMMAND
     };
 
-    SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
+    static RxCheck honda_common_interceptor_rx_checks[] = {
+      HONDA_COMMON_RX_CHECKS(0)
+      {.msg = {{0x201, 0, 6, .check_checksum = false, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
+    };
+  
+    enable_gas_interceptor ? SET_RX_CHECKS(honda_common_interceptor_rx_checks, ret) : \
+                             SET_RX_CHECKS(honda_nidec_common_rx_checks, ret);
   }
 
-  SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  if (enable_gas_interceptor) {
+    SET_TX_MSGS(HONDA_N_INTERCEPTOR_TX_MSGS, ret);
+  } else {
+    SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+  }
 
   return ret;
 }
