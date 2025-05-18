@@ -159,7 +159,6 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   if ((addr == 0x201) && (len == 6) && enable_gas_interceptor) {
     int gas_interceptor = HONDA_GET_INTERCEPTOR(to_push);
     gas_pressed = gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD;
-    gas_interceptor_prev = gas_interceptor;
   }
 
   if (!enable_gas_interceptor) {
