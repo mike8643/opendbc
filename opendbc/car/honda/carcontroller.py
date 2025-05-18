@@ -226,9 +226,8 @@ class CarController(CarControllerBase):
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 
           if self.CP.enableGasInterceptor:
-            gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             if CC.longActive:
-              self.gas = clip(gas_mult * (gas - brake + wind_brake * 3 / 4), 0., 1.)
+              self.gas = clip((gas - brake + wind_brake * 3 / 4), 0., 1.)
             else:
               self.gas = 0.0
             can_sends.append(create_gas_interceptor_command(self.packer, self.gas, self.frame // 2))
