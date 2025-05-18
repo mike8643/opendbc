@@ -239,7 +239,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.BOSCH_LONG.value
 
     if ret.enableGasInterceptor and candidate not in HONDA_BOSCH:
-      ret.safetyConfigs[0].safetyParam |= HondaSafetyFlags.GAS_INTERCEPTOR.value
+      ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.GAS_INTERCEPTOR.value
 
     if candidate in HONDA_BOSCH_RADARLESS:
       ret.safetyConfigs[-1].safetyParam |= HondaSafetyFlags.RADARLESS.value
