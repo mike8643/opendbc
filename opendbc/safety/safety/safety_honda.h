@@ -2,6 +2,8 @@
 
 #include "safety_declarations.h"
 
+static bool enable_gas_interceptor;
+
 // All common address checks except SCM_BUTTONS which isn't on one Nidec safety configuration
 #define HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(pt_bus)                                                         \
   {.msg = {{0x1A6, (pt_bus), 8, .max_counter = 3U, .frequency = 25U},                  /* SCM_BUTTONS */       \
@@ -308,8 +310,6 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
 
   return tx;
 }
-
-static bool enable_gas_interceptor;
 
 static safety_config honda_nidec_init(uint16_t param) {
   // 0x1FA is dynamically forwarded based on stock AEB
